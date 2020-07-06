@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaptureEncoder", "CaptureEncoder\CaptureEncoder.csproj", "{7FFCAEB5-D8BA-49F4-B89F-7033E7A01447}"
 EndProject
@@ -42,6 +42,8 @@ Global
 		{7FFCAEB5-D8BA-49F4-B89F-7033E7A01447}.Release|x86.ActiveCfg = Release|x86
 		{7FFCAEB5-D8BA-49F4-B89F-7033E7A01447}.Release|x86.Build.0 = Release|x86
 		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|Any CPU.Build.0 = Debug|x86
+		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|Any CPU.Deploy.0 = Debug|x86
 		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|ARM.ActiveCfg = Debug|ARM
 		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|ARM.Build.0 = Debug|ARM
 		{4BA5485A-9122-404C-8FE3-15A8A0E31E40}.Debug|ARM.Deploy.0 = Debug|ARM

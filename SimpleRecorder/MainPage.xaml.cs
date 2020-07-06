@@ -20,16 +20,21 @@ namespace SimpleRecorder
 {
     public sealed partial class MainPage : Page
     {
+
+        VideoManager VM;
+
         public MainPage()
         {
             InitializeComponent();
+
+            VM = new VideoManager();
 
             if (!GraphicsCaptureSession.IsSupported())
             {
                 IsEnabled = false;
 
                 var dialog = new MessageDialog(
-                    "Screen capture is not supported on this device for this release of Windows!",
+                    "Sorry! Screen capture is not supported on your device.",
                     "Screen capture unsupported");
 
                 var ignored = dialog.ShowAsync();
@@ -52,17 +57,19 @@ namespace SimpleRecorder
             FrameRateComboBox.ItemsSource = frameRates;
             FrameRateComboBox.SelectedIndex = frameRates.IndexOf($"{settings.FrameRate}fps");
 
-            UseCaptureItemSizeCheckBox.IsChecked = settings.UseSourceSize;
+            UseSourceSizeCheckBox.IsChecked = settings.UseSourceSize;
+
+            ExampleNotif.Show("Some trext", 5);
         }
 
         private async void ToggleButton_Checked(object sender, RoutedEventArgs e)
         {
-            var button = (ToggleButton)sender;
+            var captureButton = (ToggleButton)sender;
 
             // Get our encoder properties
             var frameRate = uint.Parse(((string)FrameRateComboBox.SelectedItem).Replace("fps", ""));
             var quality = (VideoEncodingQuality)Enum.Parse(typeof(VideoEncodingQuality), (string)QualityComboBox.SelectedItem, false);
-            var useSourceSize = UseCaptureItemSizeCheckBox.IsChecked.Value;
+            var useSourceSize = UseSourceSizeCheckBox.IsChecked.Value;
 
             var temp = MediaEncodingProfile.CreateMp4(quality);
             var bitrate = temp.Video.Bitrate;
@@ -74,7 +81,7 @@ namespace SimpleRecorder
             var item = await picker.PickSingleItemAsync();
             if (item == null)
             {
-                button.IsChecked = false;
+                captureButton.IsChecked = false;
                 return;
             }
 
@@ -87,18 +94,16 @@ namespace SimpleRecorder
                 // Even if we're using the capture item's real size,
                 // we still want to make sure the numbers are even.
                 // Some encoders get mad if you give them odd numbers.
-                width = EnsureEven(width);
-                height = EnsureEven(height);
+                width = VM.EnsureEven(width);
+                height = VM.EnsureEven(height);
             }
 
-            // Find a place to put our vidoe for now
+            // Find a place to put our video for now
             var file = await GetTempFileAsync();
 
             // Tell the user we've started recording
-            MainTextBlock.Text = "● rec";
-            var originalBrush = MainTextBlock.Foreground;
-            MainTextBlock.Foreground = new SolidColorBrush(Colors.Red);
-            MainProgressBar.IsIndeterminate = true;
+            CaptureBtnFontIcon.Glyph = "\uE15B";
+            
 
             // Kick off the encoding
             try
@@ -111,29 +116,27 @@ namespace SimpleRecorder
                         width, height, bitrate, 
                         frameRate);
                 }
-                MainTextBlock.Foreground = originalBrush;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex);
 
-                var dialog = new MessageDialog(
+                var failDialog = new MessageDialog(
                     $"Uh-oh! Something went wrong!\n0x{ex.HResult:X8} - {ex.Message}",
                     "Recording failed");
 
-                await dialog.ShowAsync();
+                await failDialog.ShowAsync();
 
-                button.IsChecked = false;
-                MainTextBlock.Text = "failure";
-                MainTextBlock.Foreground = originalBrush;
+                captureButton.IsChecked = false;
                 MainProgressBar.IsIndeterminate = false;
                 return;
             }
 
             // At this point the encoding has finished,
             // tell the user we're now saving
-            MainTextBlock.Text = "saving...";
+            var dialog = new MessageDialog("Saving...");
+            await dialog.ShowAsync();
 
             // Ask the user where they'd like the video to live
             var newFile = await PickVideoAsync();
@@ -141,18 +144,22 @@ namespace SimpleRecorder
             {
                 // User decided they didn't want it
                 // Throw out the encoded video
-                button.IsChecked = false;
-                MainTextBlock.Text = "canceled";
+                captureButton.IsChecked = false;
+                var canceledDialog = new MessageDialog("You canceled it!");
+                await canceledDialog.ShowAsync();
+                CaptureBtnFontIcon.Glyph = "\uE722";
                 MainProgressBar.IsIndeterminate = false;
                 await file.DeleteAsync();
                 return;
             }
-            // Move our vidoe to its new home
+            // Move our video to its new home
             await file.MoveAndReplaceAsync(newFile);
 
             // Tell the user we're done
-            button.IsChecked = false;
-            MainTextBlock.Text = "done";
+            captureButton.IsChecked = false;
+            var doneDialog = new MessageDialog("Done!");
+            await doneDialog.ShowAsync();
+            CaptureBtnFontIcon.Glyph = "\uE722";
             MainProgressBar.IsIndeterminate = false;
 
             // Open the final product
@@ -185,23 +192,11 @@ namespace SimpleRecorder
             return file;
         }
 
-        private uint EnsureEven(uint number)
-        {
-            if (number % 2 == 0)
-            {
-                return number;
-            }
-            else
-            {
-                return number + 1;
-            }
-        }
-
         private AppSettings GetCurrentSettings()
         {
             var quality = ParseEnumValue<VideoEncodingQuality>((string)QualityComboBox.SelectedItem);
             var frameRate = uint.Parse(((string)FrameRateComboBox.SelectedItem).Replace("fps", ""));
-            var useSourceSize = UseCaptureItemSizeCheckBox.IsChecked.Value;
+            var useSourceSize = UseSourceSizeCheckBox.IsChecked.Value;
 
             return new AppSettings { Quality = quality, FrameRate = frameRate, UseSourceSize = useSourceSize };
         }
@@ -258,5 +253,6 @@ namespace SimpleRecorder
 
         private IDirect3DDevice _device;
         private Encoder _encoder;
+
     }
 }
